@@ -46,6 +46,41 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   };
 });
 
+// Image Generation via Google AI Studio Imagen 3 API
+async function generateImageWithGoogle(prompt, apiKey) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      instances: [
+        { prompt: prompt }
+      ],
+      parameters: {
+        sampleCount: 1,
+        outputMimeType: "image/png",
+        aspectRatio: "1:1"
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Google Imagen API Error (${response.status}): ${errorText}`);
+  }
+
+  const json = await response.json();
+  if (!json.predictions || json.predictions.length === 0 || !json.predictions[0].bytesBase64Encoded) {
+    throw new Error(`Invalid response structure from Google Imagen API: ${JSON.stringify(json)}`);
+  }
+
+  const b64Data = json.predictions[0].bytesBase64Encoded;
+  return Buffer.from(b64Data, "base64");
+}
+
 // Image Generation via Stability AI Core API
 async function generateImageWithStabilityAI(prompt, apiKey) {
   const formData = new FormData();
@@ -143,6 +178,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const prompt = `3D isometric product showcase for a digital banking app, featuring several floating elements in a minimalist layout. Claymorphic forms mixed with frosted acrylic glassmorphism. Objects include ${inputPrompt}. Soft internal glow combined with direct external sunlight creating distinct geometric shadows. High fidelity render, octane shader, cinematic lighting.`;
 
     try {
+      const googleKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
       const stabilityKey = process.env.STABILITY_API_KEY;
       const openaiKey = process.env.OPENAI_API_KEY;
       const removeBgKey = process.env.REMOVE_BG_API_KEY || "DBz2y4TCNeSiX6eHNuHH2eQP";
@@ -150,13 +186,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       let rawImageBuffer;
 
       // Select generation service based on available keys
-      if (stabilityKey) {
+      if (googleKey) {
+        rawImageBuffer = await generateImageWithGoogle(prompt, googleKey);
+      } else if (stabilityKey) {
         rawImageBuffer = await generateImageWithStabilityAI(prompt, stabilityKey);
       } else if (openaiKey) {
         rawImageBuffer = await generateImageWithOpenAI(prompt, openaiKey);
       } else {
         throw new Error(
-          "No Image Generation API key found. Please set STABILITY_API_KEY or OPENAI_API_KEY in your environment."
+          "No Image Generation API key found. Please set GEMINI_API_KEY, STABILITY_API_KEY, or OPENAI_API_KEY in your environment."
         );
       }
 

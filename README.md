@@ -6,7 +6,7 @@ A Model Context Protocol (MCP) server that exposes a tool for generating beautif
 
 - Exposes the `generate_symbol_image` tool to MCP clients (like Claude Desktop).
 - Auto-constructs a custom 3D isometric claymorphic/glassmorphic prompt matching your corporate UI aesthetics.
-- Dynamically generates images using either **Stability AI (SD3/Ultra Core)** or **OpenAI (DALL-E 3)** based on configured API keys.
+- Dynamically generates images using **Google AI Studio (Imagen 3)**, **Stability AI (SD3/Ultra)**, or **OpenAI (DALL-E 3)** based on configured API keys.
 - Transparently removes background using the `remove.bg` API.
 - Saves the final high-fidelity transparent PNG.
 
@@ -27,10 +27,11 @@ A Model Context Protocol (MCP) server that exposes a tool for generating beautif
 
 ## Configuration
 
-The server reads API keys from environment variables. Set at least one image generation API key:
+The server reads API keys from environment variables. Set at least one image generation API key (Google Imagen is preferred and checked first):
 
 | Variable | Description | Required |
 | --- | --- | --- |
+| `GEMINI_API_KEY` / `GOOGLE_API_KEY` | Google AI Studio API key (Imagen 3) | Yes (if using Google Imagen) |
 | `STABILITY_API_KEY` | Stability AI API key | Yes (if using Stability AI) |
 | `OPENAI_API_KEY` | OpenAI API key | Yes (if using OpenAI DALL-E) |
 | `REMOVE_BG_API_KEY` | remove.bg API key | Optional (defaults to `DBz2y4TCNeSiX6eHNuHH2eQP`) |
@@ -49,6 +50,7 @@ Add the server to the `mcpServers` object:
       "command": "node",
       "args": ["c:/Users/Tateo/my-project/symbol-image-mcp/index.js"],
       "env": {
+        "GEMINI_API_KEY": "YOUR_GEMINI_API_KEY_HERE",
         "STABILITY_API_KEY": "YOUR_STABILITY_API_KEY_HERE",
         "OPENAI_API_KEY": "YOUR_OPENAI_API_KEY_HERE"
       }
