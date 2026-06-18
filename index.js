@@ -30,16 +30,16 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: {
           type: "object",
           properties: {
-            symbol: {
+            prompt: {
               type: "string",
-              description: "The symbol to generate (e.g., rocket, padlock, money-bag, credit-card)",
+              description: "The description of the object(s) to generate (e.g., 'a secure padlock, a stylized money bag with a won sign, and transaction card models')",
             },
             outputPath: {
               type: "string",
               description: "Optional absolute path to save the final transparent PNG.",
             },
           },
-          required: ["symbol"],
+          required: ["prompt"],
         },
       },
     ],
@@ -125,8 +125,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
   if (name === "generate_symbol_image") {
-    const symbol = args.symbol;
-    const outputPath = args.outputPath || path.join(process.cwd(), "assets", `${symbol}_nobg.png`);
+    const inputPrompt = args.prompt;
+    const slug = inputPrompt
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")
+      .substring(0, 30);
+    const outputPath = args.outputPath || path.join(process.cwd(), "assets", `${slug || "generated"}_nobg.png`);
 
     // Ensure output directory exists
     const dir = path.dirname(outputPath);
@@ -135,7 +140,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
 
     // Prompt built from the user's custom claymorphic/glassmorphic style guidelines
-    const prompt = `A 3D isometric product showcase of a sleek ${symbol} model, perfectly centered in the middle of the frame with generous empty margins (padding) on all sides, especially at the top. The background is a solid, uniform pastel light blue. Clean minimalist layout, claymorphic forms, frosted acrylic glassmorphism, soft lighting, high fidelity render.`;
+    const prompt = `3D isometric product showcase for a digital banking app, featuring several floating elements in a minimalist layout. Claymorphic forms mixed with frosted acrylic glassmorphism. Objects include ${inputPrompt}. Soft internal glow combined with direct external sunlight creating distinct geometric shadows. High fidelity render, octane shader, cinematic lighting.`;
 
     try {
       const stabilityKey = process.env.STABILITY_API_KEY;
@@ -165,7 +170,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         content: [
           {
             type: "text",
-            text: `Successfully generated symbol image for '${symbol}'.\nSaved transparent PNG to: ${outputPath}`,
+            text: `Successfully generated image for prompt: '${inputPrompt}'.\nSaved transparent PNG to: ${outputPath}`,
           },
         ],
       };
