@@ -46,9 +46,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   };
 });
 
-// Image Generation via Google AI Studio Imagen 3 API
+// Image Generation via Google AI Studio Imagen 4 API
 async function generateImageWithGoogle(prompt, apiKey) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
 
   const response = await fetch(url, {
     method: "POST",
